@@ -63,7 +63,8 @@ const vueApp = {
             startCueEnabled: true,
             drumsEnabled: false,
             flashOn: false,
-            isPhoneApp: IS_PHONE_APP
+            isPhoneApp: IS_PHONE_APP,
+            wakeLock: null
         }
     },
     methods: {
@@ -87,6 +88,7 @@ const vueApp = {
             this.resetKnobAnimation();
             if (IS_PHONE_APP)
                 this.sendDataToAndroid("stop");
+            this.releaseWakeLock();
         },
         enableStartCue() {
             this.currentBar -= 1;
@@ -108,6 +110,7 @@ const vueApp = {
             if (!SOUNDS[this.tickSound].buffer || !SOUNDS[this.tickSound + '_accent'].buffer)
                 return;  // sound not loaded yet. can't play.
             this.isPlaying = true;
+            this.requestWakeLock();
 
             if (!this.tempo) {
                 this.tempo = this.startTempo;
@@ -269,6 +272,19 @@ const vueApp = {
                 this.currentBar = 1;  // also reset bar back to 1.
             }
         },
+        async requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    this.wakeLock = await navigator.wakeLock.request('screen');
+                } catch (e) { }
+            }
+        },
+        releaseWakeLock() {
+            if (this.wakeLock) {
+                this.wakeLock.release();
+                this.wakeLock = null;
+            }
+        },
         uiVariablesUpdate() {
             this.tempoUI = this.tempo;
             this.currentBarUI = this.currentBar;
@@ -294,6 +310,11 @@ const vueApp = {
                     break;
             }
         }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && this.isPlaying) {
+                this.requestWakeLock();
+            }
+        });
         loadOtherSounds();  // once vue is loaded. download other sounds.
     },
     computed: {
