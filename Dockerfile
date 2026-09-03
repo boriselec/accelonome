@@ -31,5 +31,6 @@ COPY --from=build /src/favicon.ico /usr/share/nginx/html/
 COPY --from=build /src/header_icon.png /usr/share/nginx/html/
 COPY --from=build /src/header.png /usr/share/nginx/html/
 COPY --from=build /src/assets/ /usr/share/nginx/html/assets/
+COPY LICENSE /usr/share/nginx/html/
 
 EXPOSE 80
